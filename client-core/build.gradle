@@ -1,0 +1,46 @@
+plugins {
+    id 'java-library'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', '../srcClientdetu']
+            exclude 'com/beatdz/langlalau/**'
+            exclude 'TestEncode.java'
+        }
+        resources {
+            srcDirs = ['../srcClientdetu/Langla_data']
+            include 'resource/**'
+            include 'music/**'
+            include 'sound/**'
+            include 'animesoft/**'
+            include 'DanhHieu/**'
+            include 'support/**'
+        }
+    }
+}
+
+tasks.named('processResources') {
+    from('../srcClientdetu/path.txt')
+    from('../srcClientdetu/META-INF') {
+        into 'META-INF'
+    }
+}
+
+dependencies {
+    api "com.badlogicgames.gdx:gdx:$gdxVersion"
+    api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 8
+    options.compilerArgs += ['-Xlint:-options']
+}

@@ -1,0 +1,82 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.9.2'
+    }
+}
+
+allprojects {
+    group = 'local.langlanam.client'
+    version = '1.0-SNAPSHOT'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+ext {
+    gdxVersion = '1.14.1'
+    roboVMVersion = '2.3.23'
+}
+
+def packagedOutputDir = layout.projectDirectory.dir('build-output')
+
+tasks.register('packagePc', Copy) {
+    group = 'distribution'
+    description = 'Build and copy the desktop PC client into build-output/pc.'
+    dependsOn ':client:installDist'
+    from(project(':client').layout.buildDirectory.dir('install/LangLaNam-PC'))
+    into(packagedOutputDir.dir('pc'))
+}
+
+tasks.register('packageApk', Copy) {
+    group = 'distribution'
+    description = 'Build and copy the Android APK into build-output/apk.'
+    dependsOn ':android:assembleDebug', ':android:assembleRelease'
+    doFirst {
+        delete fileTree(packagedOutputDir.dir('apk').asFile) {
+            include '*.apk'
+        }
+    }
+    from(project(':android').layout.buildDirectory.dir('outputs/apk/debug')) {
+        include '*.apk'
+        rename { 'LangLaNam-debug.apk' }
+    }
+    from(project(':android').layout.buildDirectory.dir('outputs/apk/release')) {
+        include '*.apk'
+        rename { 'LangLaNam-release-unsigned.apk' }
+    }
+    into(packagedOutputDir.dir('apk'))
+}
+
+tasks.register('packageIos') {
+    group = 'distribution'
+    description = 'Build iOS classes on non-macOS, or create/copy IPA on macOS into build-output/ios.'
+    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+        dependsOn ':ios:createIPA'
+    } else {
+        dependsOn ':ios:classes'
+    }
+    doLast {
+        def outDir = packagedOutputDir.dir('ios').asFile
+        outDir.mkdirs()
+        copy {
+            from(project(':ios').layout.buildDirectory.dir('robovm'))
+            include '**/*.ipa', '**/*.app/**'
+            into(outDir)
+        }
+        file("${outDir}/README_iOS_BUILD.txt").text = org.gradle.internal.os.OperatingSystem.current().isMacOsX()
+            ? 'iOS build completed. IPA/App outputs are copied here when RoboVM produces them.'
+            : 'iOS Java project compiled on Windows. To create an IPA, run ./gradlew :packageIos on macOS with Xcode and Apple signing configured.'
+    }
+}
+
+tasks.register('packagePlatforms') {
+    group = 'distribution'
+    description = 'Build and copy PC, APK and iOS outputs into separate folders under build-output.'
+    dependsOn ':packagePc', ':packageApk', ':packageIos'
+}

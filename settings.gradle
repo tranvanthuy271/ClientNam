@@ -1,0 +1,8 @@
+rootProject.name = 'ClientNam'
+
+include 'core', 'client', 'android', 'ios'
+
+project(':core').projectDir = file('client-core')
+project(':client').projectDir = file('srcClientdetu')
+project(':android').projectDir = file('platforms/android')
+project(':ios').projectDir = file('platforms/ios')

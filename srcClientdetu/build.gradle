@@ -1,0 +1,59 @@
+plugins {
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['.']
+            include 'com/beatdz/langlalau/**'
+            exclude 'build/**'
+        }
+        resources {
+            srcDirs = []
+        }
+    }
+}
+
+application {
+    mainClass = 'com.beatdz.langlalau.DesktopLauncher'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+    runtimeOnly "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    runtimeOnly "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 8
+    options.compilerArgs += ['-Xlint:-options']
+}
+
+tasks.named('processResources') {
+    enabled = false
+}
+
+tasks.named('run') {
+    workingDir = projectDir
+    standardInput = System.in
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
+
+tasks.named('jar') {
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+}
+
+tasks.named('installDist') {
+    destinationDir = layout.buildDirectory.dir('install/LangLaNam-PC').get().asFile
+}
