@@ -1,6 +1,9 @@
 buildscript {
     repositories {
+        google()
         mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
     }
     dependencies {
         classpath "com.mobidevelop.robovm:robovm-gradle-plugin:$roboVMVersion"
@@ -8,7 +11,7 @@ buildscript {
 }
 
 apply plugin: 'robovm'
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 java {
     toolchain {
@@ -16,12 +19,20 @@ java {
     }
 }
 
+sourceSets {
+    main {
+        java.srcDirs = ['src/main/java']
+    }
+}
+
 dependencies {
     implementation project(':core')
     implementation "com.mobidevelop.robovm:robovm-rt:$roboVMVersion"
     implementation "com.mobidevelop.robovm:robovm-cocoatouch:$roboVMVersion"
-    implementation "com.badlogicgames.gdx:gdx-backend-robovm-metalangle:$gdxVersion"
+    implementation "com.mobidevelop.robovm:robovm-objc:$roboVMVersion"
+    implementation "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion"
     implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-ios"
+    implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
     implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-ios"
 }
 
@@ -31,5 +42,22 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 ext {
-    mainClassName = 'com.beatdz.langlalau.ios.IOSLauncher'
+    mainClassName = 'com.dnd.anhbien.IOSLauncher'
+}
+
+launchIPhoneSimulator.dependsOn build
+launchIPadSimulator.dependsOn build
+launchIOSDevice.dependsOn build
+createIPA.dependsOn build
+
+def robovmProperties = new Properties()
+def robovmPropertiesFile = file('robovm.properties')
+if (robovmPropertiesFile.exists()) {
+    robovmPropertiesFile.withInputStream { robovmProperties.load(it) }
+}
+
+robovm {
+    archs = 'arm64'
+    iosSignIdentity = findProperty('ios.signing.identity') ?: robovmProperties.getProperty('ios.signing.identity')
+    iosProvisioningProfile = findProperty('ios.provisioning.profile') ?: robovmProperties.getProperty('ios.provisioning.profile')
 }
