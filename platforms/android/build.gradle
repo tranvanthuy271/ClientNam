@@ -17,7 +17,7 @@ android {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src/main/java']
             res.srcDirs = ['res']
-            assets.srcDirs = ['../../srcClientdetu/Langla_data']
+            assets.srcDirs = ["$buildDir/generated/minimalAssets"]
             jniLibs.srcDirs = ['libs']
         }
     }
@@ -48,6 +48,17 @@ android {
 
 configurations {
     natives
+}
+
+tasks.register('syncMinimalAndroidAssets', Sync) {
+    from('../../srcClientdetu/Langla_data') {
+        include 'resource/**'
+    }
+    into "$buildDir/generated/minimalAssets"
+}
+
+tasks.named('preBuild') {
+    dependsOn 'syncMinimalAndroidAssets'
 }
 
 dependencies {

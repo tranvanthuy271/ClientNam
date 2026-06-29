@@ -5,7 +5,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="Làng Lá Nam"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="LangLaBang"
         android:theme="@style/GdxTheme"
         android:usesCleartextTraffic="true">
         <activity

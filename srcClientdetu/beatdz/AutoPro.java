@@ -32,16 +32,15 @@ public class AutoPro {
     }
 
     public static mImage getIconTool3() {
-//        try {
-//            if (iconTool3 == null || iconTool3.b() == null) {
-//                Binary.write("arr_iconimage", Binary.b("http://14.225.231.69/~laydatac/images/background1.jpg"));
-//                iconTool3 = mImage.a(Binary.read("arr_iconimage"), 0, 0);
-//            }
-//            return iconTool3;
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
+        try {
+            if (iconTool3 == null || iconTool3.b() == null) {
+                iconTool3 = Binary2.a("f", (MainScreen) null);
+            }
+            return iconTool3;
+        } catch (Exception ex) {
+            Utlis.println(ex);
             return mImage.a(1, 1);
-     //   }
+        }
     }
 
     private static boolean isTat = false;

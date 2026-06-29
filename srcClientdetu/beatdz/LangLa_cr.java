@@ -17,7 +17,28 @@ public class LangLa_cr {
    public static ShaderProgram g;
    public static ShaderProgram d2;
 
+   private static void a(ShaderProgram var0) {
+      try {
+         if (var0 != null) {
+            var0.dispose();
+         }
+      } catch (Exception var1) {
+      }
+   }
+
    static {
+      rebuild();
+   }
+
+   public static void rebuild() {
+      a(a);
+      a(b);
+      a(c);
+      a(d);
+      a(d2);
+      a(e);
+      a(f);
+      a(g);
       a = new ShaderProgram("attribute vec4 a_position;\nattribute vec4 a_color;\nattribute vec2 a_texCoord0;\n\nuniform mat4 u_projTrans;\n\nvarying vec4 v_color;\nvarying vec2 v_texCoords;\n\nvoid main() {\n    v_color = a_color;\n    v_texCoords = a_texCoord0;\n    gl_Position = u_projTrans * a_position;\n}", h);
       b = new ShaderProgram("attribute vec4 a_position;\nattribute vec4 a_color;\nattribute vec2 a_texCoord0;\n\nuniform mat4 u_projTrans;\n\nvarying vec4 v_color;\nvarying vec2 v_texCoords;\n\nvoid main() {\n    v_color = a_color;\n    v_texCoords = a_texCoord0;\n    gl_Position = u_projTrans * a_position;\n}", i);
       c = new ShaderProgram("attribute vec4 a_position;\nattribute vec4 a_color;\nattribute vec2 a_texCoord0;\n\nuniform mat4 u_projTrans;\n\nvarying vec4 v_color;\nvarying vec2 v_texCoords;\n\nvoid main() {\n    v_color = a_color;\n    v_texCoords = a_texCoord0;\n    gl_Position = u_projTrans * a_position;\n}", j);

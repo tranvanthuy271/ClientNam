@@ -3,6 +3,8 @@ import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Blending;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -30,7 +32,99 @@ public class Binary2 {
    }
 
    private static mImage createImageRobust(byte[] var0) {
-      return Binary.createImage(var0);
+      if (isJpeg(var0)) {
+         mImage var2 = createImageWithImageIo(var0);
+         if (var2 != null) {
+            return var2;
+         }
+      }
+
+      mImage var1 = Binary.createImage(var0);
+      return var1 != null ? var1 : createImageWithImageIo(var0);
+   }
+
+   private static boolean isJpeg(byte[] var0) {
+      return var0 != null && var0.length > 2 && (var0[0] & 255) == 255 && (var0[1] & 255) == 216;
+   }
+
+   private static boolean isStartupBackground(String var0) {
+      return "a".equals(var0) || "e".equals(var0) || "f".equals(var0);
+   }
+
+   private static mImage createImageWithImageIo(byte[] var0) {
+      try {
+         Class var1 = Class.forName("javax.imageio.ImageIO");
+         Object var2 = var1.getMethod("read", new Class[]{java.io.InputStream.class}).invoke((Object)null, new Object[]{new java.io.ByteArrayInputStream(var0)});
+         if (var2 == null) {
+            return null;
+         }
+
+         int var3 = ((Integer)var2.getClass().getMethod("getWidth", new Class[0]).invoke(var2, new Object[0])).intValue();
+         int var4 = ((Integer)var2.getClass().getMethod("getHeight", new Class[0]).invoke(var2, new Object[0])).intValue();
+         mImage var5 = Binary.createImage(var3, var4);
+         if (var5 == null || var5.b == null) {
+            return null;
+         }
+
+         java.lang.reflect.Method var6 = var2.getClass().getMethod("getRGB", new Class[]{Integer.TYPE, Integer.TYPE});
+         Color var15 = new Color();
+
+         for(int var7 = 0; var7 < var4; ++var7) {
+            for(int var8 = 0; var8 < var3; ++var8) {
+               int var9 = ((Integer)var6.invoke(var2, new Object[]{Integer.valueOf(var8), Integer.valueOf(var7)})).intValue();
+               var15.r = (float)(var9 >> 16 & 255) / 255.0F;
+               var15.g = (float)(var9 >> 8 & 255) / 255.0F;
+               var15.b = (float)(var9 & 255) / 255.0F;
+               var15.a = (float)(var9 >> 24 & 255) / 255.0F;
+               var5.b.drawPixel(var8, var7, Color.rgba8888(var15));
+            }
+         }
+
+         return var5;
+      } catch (Throwable var16) {
+         return null;
+      }
+   }
+
+   private static byte[] readClasspathResource(String var0) {
+      String[] var1 = new String[]{"resource/" + var0, var0};
+
+      for(int var2 = 0; var2 < var1.length; ++var2) {
+         InputStream var3 = null;
+         ByteArrayOutputStream var4 = null;
+
+         try {
+            var3 = Binary2.class.getClassLoader().getResourceAsStream(var1[var2]);
+            if (var3 != null) {
+               var4 = new ByteArrayOutputStream();
+               byte[] var5 = new byte[4096];
+
+               int var6;
+               while((var6 = var3.read(var5)) >= 0) {
+                  var4.write(var5, 0, var6);
+               }
+
+               return var4.toByteArray();
+            }
+         } catch (Exception var16) {
+         } finally {
+            try {
+               if (var4 != null) {
+                  var4.close();
+               }
+            } catch (Exception var15) {
+            }
+
+            try {
+               if (var3 != null) {
+                  var3.close();
+               }
+            } catch (Exception var14) {
+            }
+         }
+      }
+
+      return null;
    }
 
    private static String sha256(byte[] var0) {
@@ -192,8 +286,15 @@ public class Binary2 {
             var9 = true;
             byte[] var2;
             var2 = null;
+            boolean var18 = false;
+            if (isStartupBackground(var0)) {
+               var2 = readClasspathResource(var0 + ".png");
+               var18 = var2 != null;
+            }
             try {
-               var2 = com.badlogic.gdx.Gdx.files.local("Langla_data/resource/" + var0).readBytes();
+               if (var2 == null) {
+                  var2 = com.badlogic.gdx.Gdx.files.local("Langla_data/resource/" + var0).readBytes();
+               }
             } catch (Exception ex) {
                var2 = null;
             }
@@ -212,6 +313,9 @@ public class Binary2 {
                if (var2 == null) {
                   var2 = null;
                }
+            }
+            if (var2 == null) {
+               var2 = readClasspathResource(var0);
             }
             if (var2 == null) {
                try {
@@ -237,12 +341,16 @@ public class Binary2 {
             if (var2 == null) {
                throw new RuntimeException("missing resource bytes: " + var0);
             }
-            byte[] var17 = new byte[var2.length];
-            System.arraycopy(var2, 0, var17, 0, var2.length);
-            Utlis.a(var17);
-            var16 = createImageRobust(var17);
-            if (var16 == null) {
+            if (var18) {
                var16 = createImageRobust(var2);
+            } else {
+               byte[] var17 = new byte[var2.length];
+               System.arraycopy(var2, 0, var17, 0, var2.length);
+               Utlis.a(var17);
+               var16 = createImageRobust(var17);
+               if (var16 == null) {
+                  var16 = createImageRobust(var2);
+               }
             }
             if (var16 == null) {
                throw new RuntimeException("cannot decode resource image: " + var0 + " len=" + var2.length);

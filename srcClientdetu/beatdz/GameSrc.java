@@ -710,6 +710,7 @@ public class GameSrc extends MainScreen {
     public int cd = 0;
     private static mImage dB;
     private static long dC;
+    private long debugHudLogAt;
     public Entity ce;
     public int cf;
     public String cg = "";
@@ -742,6 +743,65 @@ public class GameSrc extends MainScreen {
     public static long cA;
     public boolean cB;
     private int dK = 0;
+
+    private boolean isHudImageInvalid() {
+        int var1 = this.width * DataCenter.gI().zoomLevel;
+        int var2 = this.height * DataCenter.gI().zoomLevel;
+        return dB == null || dB.c != var1 || dB.d != var2;
+    }
+
+    private String debugHudTopName() {
+        try {
+            if (this.cD == null || this.cD.size() == 0) {
+                return "none";
+            }
+
+            Object var1 = this.cD.lastElement();
+            return var1 == null ? "null" : var1.getClass().getSimpleName();
+        } catch (Exception var2) {
+            return "err";
+        }
+    }
+
+    private void debugHudState(String var1, boolean var2) {
+        if (!Canvas.DEBUG_RENDER_LOG) {
+            return;
+        }
+
+        try {
+            long var3 = System.currentTimeMillis();
+            if (!var2 && var3 - this.debugHudLogAt < 1500L) {
+                return;
+            }
+
+            this.debugHudLogAt = var3;
+            int var5 = this.width * DataCenter.gI().zoomLevel;
+            int var6 = this.height * DataCenter.gI().zoomLevel;
+            String var7 = dB == null ? "null" : dB.c + "x" + dB.d;
+            String var8 = var1
+                    + " app=" + Gdx.app.getType()
+                    + " screen=" + this.width + "x" + this.height
+                    + " expected=" + var5 + "x" + var6
+                    + " dc=" + DataCenter.gI().widthScreen + "x" + DataCenter.gI().heightScreen
+                    + " zoom=" + DataCenter.gI().zoomLevel + "/" + DataCenter.gI().zoomLevelScreen
+                    + " dB=" + var7
+                    + " invalid=" + this.isHudImageInvalid()
+                    + " bb=" + this.bb
+                    + " aH=" + DataCenter.gI().aH
+                    + " cD=" + (this.cD == null ? -1 : this.cD.size())
+                    + " top=" + this.debugHudTopName()
+                    + " cV=" + cV.size()
+                    + " clip=" + Graphics.m();
+            try {
+                Gdx.app.log("LLHUD", var8);
+            } catch (Exception var10) {
+            }
+
+            System.out.println("[LLHUD] " + var8);
+        } catch (Exception var9) {
+            Utlis.println(var9);
+        }
+    }
 
     public GameSrc() {
         this.vItemMap = new Vector();
@@ -3533,7 +3593,14 @@ public class GameSrc extends MainScreen {
                 int var7;
                 int var8;
                 int var26;
-                if (!this.bb && !DataCenter.gI().aH && this.cD.lastElement().equals(this) && cV.size() == 0) {
+                this.debugHudState("hud-gate", false);
+                if (!this.bb && DataCenter.gI().aH && this.cD.size() > 0 && this.cD.lastElement().equals(this) && cV.size() == 0 && this.isHudImageInvalid()) {
+                    this.debugHudState("stale-cache-reset", true);
+                    DataCenter.gI().aH = false;
+                }
+
+                if (!this.bb && !DataCenter.gI().aH && this.cD.size() > 0 && this.cD.lastElement().equals(this) && cV.size() == 0) {
+                    this.debugHudState("rebuild-start", true);
                     DataCenter.gI().aH = true;
                     Binary.cleanImage(dB);
                     Pixmap var28;
@@ -3677,6 +3744,7 @@ public class GameSrc extends MainScreen {
                     Binary2.a(var28, var24.b, var26 * DataCenter.gI().zoomLevel, 66 * DataCenter.gI().zoomLevel, Blending.SourceOver);
                     var24.a();
                     Binary.disposeImage(dB);
+                    this.debugHudState("rebuild-end", true);
                 }
 
                 if (this.cD.size() > 0 && this.cD.lastElement().equals(this) || this.cD.size() == 2 && this.cD.lastElement() instanceof LangLa_dl) {
@@ -3685,7 +3753,12 @@ public class GameSrc extends MainScreen {
                     var18 = var1.b;
                     this.a(var1, 0, 0);
                     if (!this.bb) {
-                        var1.a(dB, 0, 0);
+                        if (dB == null) {
+                            this.debugHudState("draw-skip-null", true);
+                        } else {
+                            this.debugHudState("draw", false);
+                            var1.a(dB, 0, 0);
+                        }
                         if (LangLa_cz.cZ) {
                             mFont.a(mFont.d, var1, Caption.qG, DataCenter.gI().widthScreen / 2, DataCenter.gI().heightScreen - 74, 2, -2560, 2, 1);
                         } else if (this.ca) {

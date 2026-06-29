@@ -29,6 +29,9 @@ tasks.register('packagePc', Copy) {
     group = 'distribution'
     description = 'Build and copy the desktop PC client into build-output/pc.'
     dependsOn ':client:installDist'
+    doFirst {
+        delete packagedOutputDir.dir('pc')
+    }
     from(project(':client').layout.buildDirectory.dir('install/LangLaNam-PC'))
     into(packagedOutputDir.dir('pc'))
 }
@@ -44,11 +47,11 @@ tasks.register('packageApk', Copy) {
     }
     from(project(':android').layout.buildDirectory.dir('outputs/apk/debug')) {
         include '*.apk'
-        rename { 'LangLaNam-debug.apk' }
+        rename { 'LangLaBang-debug.apk' }
     }
     from(project(':android').layout.buildDirectory.dir('outputs/apk/release')) {
         include '*.apk'
-        rename { 'LangLaNam-release-unsigned.apk' }
+        rename { 'LangLaBang-release-unsigned.apk' }
     }
     into(packagedOutputDir.dir('apk'))
 }

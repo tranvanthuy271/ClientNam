@@ -59,6 +59,15 @@ public class AppListener extends Game {
             f = Binary2.a("e", (MainScreen) null);
             c = Binary2.a("a", (MainScreen) null);
         } catch (Exception exception) {
+            Utlis.println(exception);
+        }
+
+        if (f == null) {
+            f = LangLa_fq.a;
+        }
+
+        if (c == null) {
+            c = LangLa_fq.a;
         }
     }
 

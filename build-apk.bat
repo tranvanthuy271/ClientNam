@@ -16,14 +16,14 @@ if not exist "%~dp0gradlew.bat" if exist "%~dp0..\gradlew.bat" set "GRADLE_CMD=%
 call "%GRADLE_CMD%" :packageApk
 if errorlevel 1 goto fail
 
-if exist "%OUT_DIR%\LangLaNam-debug.apk" copy /Y "%OUT_DIR%\LangLaNam-debug.apk" "%OUT_DIR%\LangLaNam-install.apk" >nul
+if exist "%OUT_DIR%\LangLaBang-debug.apk" copy /Y "%OUT_DIR%\LangLaBang-debug.apk" "%OUT_DIR%\LangLaBang-install.apk" >nul
 
 (
-    echo LangLaNam Android build
+    echo LangLaBang Android build
     echo.
-    echo LangLaNam-install.apk: file de gui user cai thu, da duoc ky bang debug key.
-    echo LangLaNam-debug.apk: ban debug goc.
-    echo LangLaNam-release-unsigned.apk: ban release chua ky, can keystore rieng neu dua len store hoac phat hanh chinh thuc.
+    echo LangLaBang-install.apk: file de gui user cai thu, da duoc ky bang debug key.
+    echo LangLaBang-debug.apk: ban debug goc.
+    echo LangLaBang-release-unsigned.apk: ban release chua ky, can keystore rieng neu dua len store hoac phat hanh chinh thuc.
 ) > "%OUT_DIR%\README-APK.txt"
 
 echo.

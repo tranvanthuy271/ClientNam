@@ -75,7 +75,7 @@ public class DesktopLauncher implements AppEventListener, IDialogTextListener {
                 addIconIfPresent(config, "resource/4.png");
                 addIconIfPresent(config, "resource/5.png");
                 addIconIfPresent(config, "resource/6.png");
-                config.title = "Làng Lá Phiêu Lưu Ký";
+                config.title = "LangLaBang";
                 config.resizable = false;
                 GameM.b(b);
                 new LwjglApplication(GameM.l(), config);

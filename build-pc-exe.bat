@@ -3,14 +3,14 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 cd /d "%~dp0"
 
-set "APP_NAME=LangLaNam"
+set "APP_NAME=LangLaBang"
 set "MAIN_CLASS=com.beatdz.langlalau.DesktopLauncher"
 set "MAIN_JAR=client-1.0-SNAPSHOT.jar"
 set "CLIENT_INSTALL=%~dp0srcClientdetu\build\install\LangLaNam-PC"
 set "CLIENT_LIB=%CLIENT_INSTALL%\lib"
 set "OUT_ROOT=%~dp0build-output\pc"
 set "APP_IMAGE=%OUT_ROOT%\%APP_NAME%"
-set "DATA_DIR=%~dp0srcClientdetu\Langla_data"
+set "ICON_FILE=%~dp0platforms\pc\LangLaBang.ico"
 
 echo.
 echo [PC] Building desktop client...
@@ -84,24 +84,15 @@ echo [PC] Creating portable EXE with bundled runtime...
   --input "%CLIENT_LIB%" ^
   --main-jar "%MAIN_JAR%" ^
   --main-class "%MAIN_CLASS%" ^
+  --icon "%ICON_FILE%" ^
   --java-options "-Dfile.encoding=UTF-8"
 if errorlevel 1 goto fail
 
 echo.
-echo [PC] Copying game data next to EXE...
-if exist "%DATA_DIR%" (
-    robocopy "%DATA_DIR%" "%APP_IMAGE%\Langla_data" /E /NFL /NDL /NJH /NJS /NP >nul
-    if errorlevel 8 goto fail
-    robocopy "%DATA_DIR%" "%APP_IMAGE%\app\Langla_data" /E /NFL /NDL /NJH /NJS /NP >nul
-    if errorlevel 8 goto fail
-) else (
-    echo [PC] WARNING: Khong thay data: "%DATA_DIR%"
-)
-
-if exist "%~dp0srcClientdetu\path.txt" copy /Y "%~dp0srcClientdetu\path.txt" "%APP_IMAGE%\path.txt" >nul
-if exist "%~dp0srcClientdetu\path.txt" copy /Y "%~dp0srcClientdetu\path.txt" "%APP_IMAGE%\app\path.txt" >nul
-if exist "%~dp0srcClientdetu\animesoft" robocopy "%~dp0srcClientdetu\animesoft" "%APP_IMAGE%\animesoft" /E /NFL /NDL /NJH /NJS /NP >nul
-if errorlevel 8 goto fail
+echo [PC] Removing loose asset/cache folders; startup assets are already inside core jar...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$paths = @('%APP_IMAGE%\Langla_data','%APP_IMAGE%\app\Langla_data','%APP_IMAGE%\animesoft','%APP_IMAGE%\app\animesoft','%APP_IMAGE%\path.txt','%APP_IMAGE%\app\path.txt','%APP_IMAGE%\%APP_NAME%.ico'); foreach ($p in $paths) { if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Recurse -Force } }"
+if errorlevel 1 goto fail
 
 echo.
 echo [PC] Writing helper files...

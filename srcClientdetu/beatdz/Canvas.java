@@ -19,6 +19,7 @@ import java.util.Vector;
 
 public abstract class Canvas implements Screen {
 
+    public static final boolean DEBUG_RENDER_LOG = false;
     public Graphics graphics;
     public static float elapsed; //sửa
     public OrthographicCamera camera;
@@ -102,6 +103,69 @@ public abstract class Canvas implements Screen {
         }
     }
 
+    private void rebuildStageInput() {
+        try {
+            if (this.stage != null) {
+                this.stage.dispose();
+            }
+        } catch (Exception var3) {
+            Utlis.println(var3);
+        }
+
+        try {
+            this.stage = new Stage(this.viewport, this.graphics.getSpriteBatch());
+            int var1 = this.viewport instanceof MyViewport ? ((MyViewport) this.viewport).x : 0;
+            this.input = new InputMultiplexer();
+            this.input.addProcessor(new mInputProcessor(this, -var1, 0));
+            this.input.addProcessor(this.stage);
+            Gdx.input.setInputProcessor(this.input);
+            Gdx.input.setCatchKey(com.badlogic.gdx.Input.Keys.BACK, true);
+            Gdx.input.setCatchKey(com.badlogic.gdx.Input.Keys.MENU, true);
+            debugLog("LLVIEW", "rebuild-stage-input batch=" + this.graphics.spriteBatch + " stage=" + this.stage);
+        } catch (Exception var4) {
+            Utlis.println(var4);
+        }
+    }
+
+    private void rebuildGraphicsResources(String var1) {
+        try {
+            debugLog("LLVIEW", "rebuild-gl-start reason=" + var1);
+            if (this.graphics != null) {
+                if (this.graphics.spriteBatch != null) {
+                    this.graphics.spriteBatch.dispose();
+                    this.graphics.spriteBatch = null;
+                }
+
+                if (this.graphics.shapeRenderer != null) {
+                    this.graphics.shapeRenderer.dispose();
+                }
+
+                this.graphics.getSpriteBatch().setProjectionMatrix(this.camera.combined);
+                LangLa_cr.rebuild();
+                this.graphics.shapeRenderer = new ShapeRenderer();
+                this.graphics.shapeRenderer.setProjectionMatrix(this.camera.combined);
+                this.rebuildStageInput();
+                DataCenter.gI().aH = false;
+            }
+        } catch (Exception var3) {
+            Utlis.println(var3);
+        }
+    }
+
+    private void clearScissors() {
+        try {
+            while (ScissorStack.peekScissors() != null) {
+                ScissorStack.popScissors();
+            }
+
+            Gdx.gl.glDisable(3089);
+            if (this.graphics != null) {
+                this.graphics.j = false;
+            }
+        } catch (Exception var1) {
+        }
+    }
+
     public void setZoomLevel() {
         if (Gdx.app.getType() != ApplicationType.Android && Gdx.app.getType() != ApplicationType.iOS) {
             if (this.width >= 640 && this.height >= 480) {
@@ -133,9 +197,76 @@ public abstract class Canvas implements Screen {
             DataCenter.gI().zoomLevel = 4;
         }
 
+        if ((Gdx.app.getType() == ApplicationType.Android || Gdx.app.getType() == ApplicationType.iOS) && DataCenter.gI().zoomLevelScreen != DataCenter.gI().zoomLevel) {
+            debugLog("LLVIEW", "sync-mobile-zoom screen=" + DataCenter.gI().zoomLevelScreen + " render=" + DataCenter.gI().zoomLevel);
+            DataCenter.gI().zoomLevelScreen = DataCenter.gI().zoomLevel;
+        }
+
     }
 
     private long startPingTime; // Biến để lưu thời gian bắt đầu tính ping
+
+    private long debugViewportLogAt;
+    private int debugViewportW = -1;
+    private int debugViewportH = -1;
+
+    private static void debugLog(String var0, String var1) {
+        if (!DEBUG_RENDER_LOG) {
+            return;
+        }
+
+        try {
+            Gdx.app.log(var0, var1);
+        } catch (Exception var3) {
+        }
+
+        System.out.println("[" + var0 + "] " + var1);
+    }
+
+    private void debugViewportState(String var1, boolean var2) {
+        try {
+            long var3 = System.currentTimeMillis();
+            int var5 = Gdx.graphics.getWidth();
+            int var6 = Gdx.graphics.getHeight();
+            if (!var2 && var3 - this.debugViewportLogAt < 1500L && this.debugViewportW == var5 && this.debugViewportH == var6) {
+                return;
+            }
+
+            this.debugViewportLogAt = var3;
+            this.debugViewportW = var5;
+            this.debugViewportH = var6;
+            MainScreen var7 = DataCenter.gI().currentScreen;
+            String var8 = var7 == null ? "null" : var7.getClass().getSimpleName();
+            debugLog("LLVIEW", var1
+                    + " app=" + Gdx.app.getType()
+                    + " gfx=" + var5 + "x" + var6
+                    + " canvas=" + this.width + "x" + this.height
+                    + " dc=" + DataCenter.gI().widthScreen + "x" + DataCenter.gI().heightScreen
+                    + " zoom=" + DataCenter.gI().zoomLevel + "/" + DataCenter.gI().zoomLevelScreen
+                    + " q/r=" + DataCenter.gI().q + "/" + DataCenter.gI().r
+                    + " aH=" + DataCenter.gI().aH
+                    + " screen=" + var8);
+        } catch (Exception var9) {
+            Utlis.println(var9);
+        }
+    }
+
+    private void syncViewportSize() {
+        try {
+            int var1 = Gdx.graphics.getWidth();
+            int var2 = Gdx.graphics.getHeight();
+            if (var1 > 0 && var2 > 0 && (this.width != var1 || this.height != var2)) {
+                this.debugViewportState("sync-resize-before", true);
+                this.resize(var1, var2);
+            } else if (this.viewport != null) {
+                this.viewport.apply(true);
+            }
+
+            Gdx.gl.glViewport(0, 0, var1, var2);
+        } catch (Exception var3) {
+            Utlis.println(var3);
+        }
+    }
 
     private void calculatePing() { //sửa
         try {
@@ -183,33 +314,23 @@ public abstract class Canvas implements Screen {
             Graphics var4;
             if (disposeGraphics) {
                 disposeGraphics = false;
-                var4 = this.graphics;
-
-                try {
-                    if (var4.spriteBatch != null) {
-                        var4.spriteBatch.dispose();
-                        var4.spriteBatch = null;
-                    }
-
-                    var4.getSpriteBatch().setProjectionMatrix(var4.canvas.camera.combined);
-                    var4.shapeRenderer.dispose();
-                    var4.shapeRenderer = new ShapeRenderer();
-                    var4.shapeRenderer.setProjectionMatrix(var4.canvas.camera.combined);
-                } catch (Exception var12) {
-                    Utlis.println(var12);
-                }
+                this.rebuildGraphicsResources("disposeGraphics");
             }
 
             ++DataCenter.gI().i;
             ++DataCenter.gI().h;
             DataCenter.gI().aO.a = false;
+            this.syncViewportSize();
             this.camera.update();
             this.update();
+            this.debugViewportState("render-loop", false);
             if (var1) {
                 if (!Graphics.m()) {
+                    Gdx.gl.glDisable(3089);
                     Gdx.gl.glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
                     Gdx.gl.glClear(16384);
                     Gdx.gl.glEnable(3042);
+                    this.clearScissors();
                     Gdx.gl20.glLineWidth((float) DataCenter.gI().zoomLevel);
                     var4 = this.graphics;
 
@@ -239,6 +360,7 @@ public abstract class Canvas implements Screen {
                     }
 
                     this.graphics.clean();
+                    this.clearScissors();
                     this.graphics.setClip(0, 0, DataCenter.gI().widthScreen, DataCenter.gI().heightScreen);
                     this.paint(this.graphics);
                     LangLa_gg var10000 = DataCenter.gI().aO;
@@ -254,14 +376,16 @@ public abstract class Canvas implements Screen {
 
                         if (var16.f && LangLa_gg.e != null && var16.d <= 4) {
                             var5.a(LangLa_gg.e, 0, 0, LangLa_gg.e.c, LangLa_gg.e.d, 0, var16.b - 25, var16.c - 25, 50 * DataCenter.gI().zoomLevel, 50 * DataCenter.gI().zoomLevel, 0);
-                            var5.f(0);
-                            var5.d(60);
-                            var5.c(0, 0, var16.b - 25, DataCenter.gI().heightScreen);
-                            var5.c(var16.b + 25, 0, DataCenter.gI().widthScreen - (var16.b + 25), DataCenter.gI().heightScreen);
-                            var5.c(var16.b - 25, 0, 50, var16.c - 25);
-                            var5.c(var16.b - 25, var16.c + 25, 50, DataCenter.gI().heightScreen - (var16.c + 25));
-                            var5.m = 1.0F;
-                            var5.c();
+                            if (Gdx.app.getType() != ApplicationType.Android && Gdx.app.getType() != ApplicationType.iOS) {
+                                var5.f(0);
+                                var5.d(60);
+                                var5.c(0, 0, var16.b - 25, DataCenter.gI().heightScreen);
+                                var5.c(var16.b + 25, 0, DataCenter.gI().widthScreen - (var16.b + 25), DataCenter.gI().heightScreen);
+                                var5.c(var16.b - 25, 0, 50, var16.c - 25);
+                                var5.c(var16.b - 25, var16.c + 25, 50, DataCenter.gI().heightScreen - (var16.c + 25));
+                                var5.m = 1.0F;
+                                var5.c();
+                            }
                         }
                     }
 
@@ -276,15 +400,15 @@ public abstract class Canvas implements Screen {
                             var4 = this.graphics;
 
                             var4.shapeRenderer.end();
-                            if (!var4.g()) {
-                                var4.getSpriteBatch().flush();
-                                ScissorStack.popScissors();
-                            }
+                            var4.getSpriteBatch().flush();
+                            this.clearScissors();
                         }
                     } catch (Exception var9) {
+                        this.clearScissors();
                     }
                 } else {
                     Gdx.gl.glClear(16384);
+                    this.clearScissors();
                 }
             }
 
@@ -373,7 +497,39 @@ public abstract class Canvas implements Screen {
     }
 
     public void resize(int var1, int var2) {
+        if (var1 <= 0 || var2 <= 0) {
+            return;
+        }
+
+        this.width = var1;
+        this.height = var2;
+        this.setZoomLevel();
+        this.camera.setToOrtho(true, (float) this.width, (float) this.height);
+        this.camera.update();
+
+        float var3 = (float) (this.width * DataCenter.gI().zoomLevel / DataCenter.gI().zoomLevelScreen - this.width % DataCenter.gI().zoomLevelScreen);
+        float var4 = (float) (this.height * DataCenter.gI().zoomLevel / DataCenter.gI().zoomLevelScreen - this.height % DataCenter.gI().zoomLevelScreen);
+        this.viewport.setWorldSize(var3, var4);
         this.stage.getViewport().update(this.width, this.height, true);
+
+        DataCenter.gI().widthScreen = this.getWidth();
+        DataCenter.gI().heightScreen = this.getHeight();
+        float var5 = DataCenter.gI().widthScreen / 640.0F;
+        float var6 = DataCenter.gI().heightScreen / 360.0F;
+        float var7 = var5 > var6 ? var5 : var6;
+        DataCenter.gI().q = (int) (640.0F * var7 * DataCenter.gI().zoomLevel);
+        DataCenter.gI().r = (int) (360.0F * var7 * DataCenter.gI().zoomLevel);
+
+        if (DataCenter.gI().currentScreen != null) {
+            DataCenter.gI().currentScreen.setSize(DataCenter.gI().widthScreen, DataCenter.gI().heightScreen);
+        }
+
+        DataCenter.gI().aH = false;
+        this.debugViewportState("resize-invalidate-hud", true);
+
+        if (this.graphics != null) {
+            this.graphics.setClip(0, 0, DataCenter.gI().widthScreen, DataCenter.gI().heightScreen);
+        }
     }
 
     public void pause() {
@@ -396,6 +552,9 @@ public abstract class Canvas implements Screen {
 
     public void resume() {
         this.l = false;
+        disposeGraphics = true;
+        DataCenter.gI().aH = false;
+        debugLog("LLVIEW", "resume-request-rebuild-gl");
         LangLa_dp var1;
         (var1 = LangLa_dp.a()).a = false;
         var1.c = false;
